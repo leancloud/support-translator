@@ -22,7 +22,7 @@ resetCreditsJob.start();
  * @param {number} chars
  */
 async function getProvider(chars) {
-  const providers = ['baidu', 'tencent'];
+  const providers = _.shuffle(['baidu', 'tencent']);
   const creditsKeys = providers.map((provider) => `credits:${provider}`);
   const creditsList = await redis.mget(...creditsKeys);
   for (const [provider, credits] of _.zip(providers, creditsList)) {
@@ -63,7 +63,7 @@ export async function translate(text) {
   text = text.trim();
   const chars = text.length;
   if (!chars) {
-    return text;
+    return { text };
   }
 
   const textHash = crypto.createHash('md5').update(text).digest('hex');
