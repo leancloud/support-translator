@@ -8,6 +8,13 @@ const app = express();
 
 app.use(bodyParser.json());
 
+app.use((req, res, next) => {
+  if (req.get('x-fanyi-token') !== token) {
+    return res.status(401).json({ message: 'Forbidden' });
+  }
+  next();
+});
+
 app.post('/', async (req, res) => {
   const { text } = req.body;
   if (typeof text !== 'string') {
