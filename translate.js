@@ -12,8 +12,8 @@ const redis = new Redis(process.env.REDIS_URL_CACHE, {
 });
 
 const resetCreditsJob = new CronJob('0 5 0 1 * *', async () => {
-  await redis.set('credits:baidu', 1000000);
-  await redis.set('credits:tencent', 4500000);
+  await produce('baidu', 1000000);
+  await produce('tencent', 5000000);
 });
 
 resetCreditsJob.start();
@@ -36,12 +36,23 @@ async function getProvider(chars) {
  * @param {string} provider
  * @param {number} credits
  */
+async function produce(provider, credits) {
+  credits = Math.floor(credits * 0.95);
+  await redis.set(`credits:${provider}`, credits.toString());
+  console.log(`[info] reset credits of ${provider} to ${credits}`);
+}
+
+/**
+ * @param {string} provider
+ * @param {number} credits
+ */
 async function consume(provider, credits) {
   const remainCredits = await redis.incrby(`credits:${provider}`, -credits);
   if (remainCredits < 0) {
     await redis.incrby(`credits:${provider}`, credits);
     throw new Error('余额不足');
   }
+  console.log(`[info] credits of ${provider} down to ${remainCredits}`);
   return remainCredits;
 }
 
