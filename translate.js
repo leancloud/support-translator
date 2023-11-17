@@ -7,13 +7,27 @@ import 'dotenv/config.js';
 import * as tencent from './providers/tencent.js';
 import * as baidu from './providers/baidu.js';
 
+const providers = [
+  {
+    name: 'baidu',
+    translate: baidu.translate,
+    credits: 1000000,
+  },
+  {
+    name: 'tencent',
+    translate: tencent.translate,
+    credits: 5000000,
+  },
+];
+
 const redis = new Redis(process.env.REDIS_URL_CACHE, {
   keyPrefix: 'fanyi:',
 });
 
 const resetCreditsJob = new CronJob('0 5 0 1 * *', async () => {
-  await produce('baidu', 1000000);
-  await produce('tencent', 5000000);
+  for (const provider of providers) {
+    await produce(provider);
+  }
 });
 
 resetCreditsJob.start();
@@ -22,37 +36,33 @@ resetCreditsJob.start();
  * @param {number} chars
  */
 async function getProvider(chars) {
-  const providers = _.shuffle(['baidu', 'tencent']);
-  const creditsKeys = providers.map((provider) => `credits:${provider}`);
+  const _providers = _.shuffle(providers);
+  const creditsKeys = _providers.map((provider) => `credits:${provider.name}`);
   const creditsList = await redis.mget(...creditsKeys);
-  for (const [provider, credits] of _.zip(providers, creditsList)) {
+  for (const [provider, credits] of _.zip(_providers, creditsList)) {
     if (credits && parseInt(credits) > chars) {
       return provider;
     }
   }
 }
 
-/**
- * @param {string} provider
- * @param {number} credits
- */
-async function produce(provider, credits) {
-  credits = Math.floor(credits * 0.95);
-  await redis.set(`credits:${provider}`, credits.toString());
-  console.log(`[info] reset credits of ${provider} to ${credits}`);
+async function produce(provider) {
+  const credits = Math.floor(provider.credits * 0.95);
+  await redis.set(`credits:${provider.name}`, credits.toString());
+  console.log(`[info] reset credits of ${provider.name} to ${credits}`);
+  s;
 }
 
-/**
- * @param {string} provider
- * @param {number} credits
- */
 async function consume(provider, credits) {
-  const remainCredits = await redis.incrby(`credits:${provider}`, -credits);
+  const remainCredits = await redis.incrby(
+    `credits:${provider.name}`,
+    -credits
+  );
   if (remainCredits < 0) {
-    await redis.incrby(`credits:${provider}`, credits);
+    await redis.incrby(`credits:${provider.name}`, credits);
     throw new Error('余额不足');
   }
-  console.log(`[info] credits of ${provider} down to ${remainCredits}`);
+  console.log(`[info] credits of ${provider.name} down to ${remainCredits}`);
   return remainCredits;
 }
 
@@ -82,17 +92,11 @@ export async function translate(text) {
   }
   const remainCredits = await consume(provider, chars);
 
-  let tResult;
-  switch (provider) {
-    case 'baidu':
-      tResult = await baidu.translate(text);
-    case 'tencent':
-      tResult = await tencent.translate(text);
-  }
+  const tResult = await provider.translate(text);
 
   const result = {
     text: tResult,
-    provider,
+    provider: provider.name,
   };
   await redis.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60 * 2);
 
