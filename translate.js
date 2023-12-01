@@ -50,7 +50,6 @@ async function produce(provider) {
   const credits = Math.floor(provider.credits * 0.95);
   await redis.set(`credits:${provider.name}`, credits.toString());
   console.log(`[info] reset credits of ${provider.name} to ${credits}`);
-  s;
 }
 
 async function consume(provider, credits) {
