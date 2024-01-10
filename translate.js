@@ -94,8 +94,9 @@ export async function translate(text) {
   const tResult = await provider.translate(text);
 
   const result = {
-    text: tResult,
     provider: provider.name,
+    from: tResult.from,
+    text: tResult.text,
   };
   await redis.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60 * 2);
 

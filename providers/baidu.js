@@ -5,6 +5,15 @@ import axios from 'axios';
 const APP_ID = process.env.BAIDU_APP_ID;
 const APP_SECRET = process.env.BAIDU_APP_SECRET;
 
+const LANG_CODE_MAP = {
+  jp: 'ja', // 日语
+  kor: 'ko', // 韩语
+  fra: 'fr', // 法语
+  spa: 'es', // 西班牙语
+  vie: 'vi', // 越南语
+  ara: 'ar', // 阿拉伯语
+};
+
 /**
  * @param {string} text
  */
@@ -37,5 +46,15 @@ export async function translate(text) {
     text = text.replace(src, dst);
   }
 
-  return text;
+  return {
+    text,
+    from: getLangCode(data.from),
+  };
+}
+
+/**
+ * @param {string} from
+ */
+function getLangCode(from) {
+  return LANG_CODE_MAP[from] || from;
 }

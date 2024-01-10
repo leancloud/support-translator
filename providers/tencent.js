@@ -23,5 +23,19 @@ export async function translate(text) {
     Target: 'zh',
     ProjectId: 0,
   });
-  return res.TargetText;
+  return {
+    text: res.TargetText,
+    from: removeScript(res.Source),
+  };
+}
+
+/**
+ * @param {string} source
+ */
+function removeScript(source) {
+  const index = source.indexOf('-');
+  if (index > 0) {
+    source = source.slice(0, index);
+  }
+  return source;
 }
