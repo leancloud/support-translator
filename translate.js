@@ -7,6 +7,8 @@ import 'dotenv/config.js';
 import * as tencent from './providers/tencent.js';
 import * as baidu from './providers/baidu.js';
 
+const ttl = 60 * 60 * 10; // 10 hours
+
 const providers = [
   {
     name: 'baidu',
@@ -98,7 +100,7 @@ export async function translate(text) {
     from: tResult.from,
     text: tResult.text,
   };
-  await redis.set(cacheKey, JSON.stringify(result), 'EX', 60 * 60 * 2);
+  await redis.set(cacheKey, JSON.stringify(result), 'EX', ttl);
 
   return {
     ...result,
