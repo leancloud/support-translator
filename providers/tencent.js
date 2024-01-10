@@ -25,17 +25,16 @@ export async function translate(text) {
   });
   return {
     text: res.TargetText,
-    from: removeScript(res.Source),
+    from: getLangCode(res.Source),
   };
 }
 
 /**
  * @param {string} source
  */
-function removeScript(source) {
-  const index = source.indexOf('-');
-  if (index > 0) {
-    source = source.slice(0, index);
+function getLangCode(source) {
+  if (source === 'zh-TW') {
+    return 'zh-Hant';
   }
   return source;
 }

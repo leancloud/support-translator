@@ -12,6 +12,7 @@ const LANG_CODE_MAP = {
   spa: 'es', // 西班牙语
   vie: 'vi', // 越南语
   ara: 'ar', // 阿拉伯语
+  cht: 'zh-Hant', // 繁体中文
 };
 
 /**
