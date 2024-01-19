@@ -13,6 +13,8 @@ const LANG_CODE_MAP = {
   vie: 'vi', // 越南语
   ara: 'ar', // 阿拉伯语
   cht: 'zh-Hant', // 繁体中文
+  may: 'ms', // 马来语
+  fil: 'tl', // 他加禄语（菲律宾语）
 };
 
 /**
