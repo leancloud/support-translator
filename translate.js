@@ -5,20 +5,14 @@ import _ from 'lodash';
 import 'dotenv/config.js';
 
 import * as tencent from './providers/tencent.js';
-import * as baidu from './providers/baidu.js';
 
 const ttl = 60 * 60 * 10; // 10 hours
 
 const providers = [
   {
-    name: 'baidu',
-    translate: baidu.translate,
-    credits: 1000000,
-  },
-  {
     name: 'tencent',
     translate: tencent.translate,
-    credits: 5000000,
+    credits: 10000000,
   },
 ];
 
