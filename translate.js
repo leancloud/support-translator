@@ -1,7 +1,5 @@
 import crypto from 'crypto';
 import { Redis } from 'ioredis';
-import { CronJob } from 'cron';
-import _ from 'lodash';
 import 'dotenv/config.js';
 
 import * as tencent from './providers/tencent.js';
@@ -12,7 +10,6 @@ const providers = [
   {
     name: 'tencent',
     translate: tencent.translate,
-    credits: 10000000,
   },
 ];
 
@@ -20,46 +17,6 @@ const redis = new Redis(process.env.REDIS_URL_CACHE, {
   keyPrefix: 'fanyi:',
 });
 
-const resetCreditsJob = new CronJob('0 5 0 1 * *', async () => {
-  for (const provider of providers) {
-    await produce(provider);
-  }
-});
-
-resetCreditsJob.start();
-
-/**
- * @param {number} chars
- */
-async function getProvider(chars) {
-  const _providers = _.shuffle(providers);
-  const creditsKeys = _providers.map((provider) => `credits:${provider.name}`);
-  const creditsList = await redis.mget(...creditsKeys);
-  for (const [provider, credits] of _.zip(_providers, creditsList)) {
-    if (credits && parseInt(credits) > chars) {
-      return provider;
-    }
-  }
-}
-
-async function produce(provider) {
-  const credits = Math.floor(provider.credits * 0.95);
-  await redis.set(`credits:${provider.name}`, credits.toString());
-  console.log(`[info] reset credits of ${provider.name} to ${credits}`);
-}
-
-async function consume(provider, credits) {
-  const remainCredits = await redis.incrby(
-    `credits:${provider.name}`,
-    -credits
-  );
-  if (remainCredits < 0) {
-    await redis.incrby(`credits:${provider.name}`, credits);
-    throw new Error('余额不足');
-  }
-  console.log(`[info] credits of ${provider.name} down to ${remainCredits}`);
-  return remainCredits;
-}
 
 /**
  * @param {string} text
@@ -81,11 +38,10 @@ export async function translate(text) {
     };
   }
 
-  const provider = await getProvider(chars);
+  const provider = providers[0];
   if (!provider) {
-    throw new Error('余额不足');
+    throw new Error('没有可用的翻译服务');
   }
-  const remainCredits = await consume(provider, chars);
 
   const tResult = await provider.translate(text);
 
@@ -98,6 +54,5 @@ export async function translate(text) {
 
   return {
     ...result,
-    credits: remainCredits,
   };
 }
